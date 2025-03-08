@@ -1,3 +1,10 @@
+# For my project
+.*
+.env
+.DS_Store
+.vscode
+data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
