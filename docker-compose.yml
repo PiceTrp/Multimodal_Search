@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  multimodal-search-app:
+    build: .
+    ports:
+      - "8000:8000" # FastAPI
+      - "8501:8501" # Streamlit
+    volumes:
+      - ./data/chroma_db:/app/data/chroma_db
+      - ./data/uploads:/app/data/uploads
+    env_file:
+      - .env
+    restart: unless-stopped
