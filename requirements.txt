@@ -1,0 +1,11 @@
+langchain 
+langchain-chroma
+langchain-experimental
+langchain-google-genai
+pillow 
+pydantic 
+lxml 
+pillow 
+matplotlib 
+chromadb 
+tiktoken
