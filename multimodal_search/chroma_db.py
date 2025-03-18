@@ -8,8 +8,7 @@ from langchain.storage import InMemoryStore
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-# project
-from image_data_extractor import extract_image_data_for_retrieval
+from multimodal_search.image_data_extractor import extract_image_data_for_retrieval
 
 
 def get_multi_vector_retriever(gallery_path, collection_name):
