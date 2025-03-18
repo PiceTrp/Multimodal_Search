@@ -25,42 +25,76 @@ def get_multi_vector_retriever(gallery_path, collection_name):
     if not os.path.exists(chroma_db_dirpath):
         os.makedirs(chroma_db_dirpath, exist_ok=True)
     
-    chroma_db_path = os.path.join(chroma_db_dirpath, collection_name)
+    # Path to save/load the retriever
+    retriever_save_path = os.path.join(chroma_db_dirpath, collection_name)
 
-    if os.path.exists(chroma_db_path):
-        print(f"Chroma database '{collection_name}' found at: {chroma_db_path}")
+    # Create embedding function
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+
+    # Check if a saved retriever exists
+    if os.path.exists(retriever_save_path) and os.path.exists(os.path.join(retriever_save_path, "config.json")):
+        print(f"MultiVectorRetriever '{collection_name}' found at: {retriever_save_path}")
         print("Loading...")
-        retriever_multi_vector_img = load_multi_vector_retriever(chroma_db_path)
-        print("Chroma database loaded.")
+        
+        # Define a function to load Chroma
+        def load_chroma(collection_name, persist_directory, embedding_function):
+            return Chroma(
+                collection_name=collection_name,
+                embedding_function=embedding_function,
+                persist_directory=persist_directory
+            )
+        
+        # Load the retriever
+        retriever_multi_vector_img = load_multi_vector_retriever(
+            retriever_save_path,
+            vectorstore_load_func=load_chroma,
+            vectorstore_load_kwargs={
+                "collection_name": collection_name,
+                "persist_directory": retriever_save_path,
+                "embedding_function": embeddings,
+            }
+        )
+        
+        print("MultiVectorRetriever loaded successfully.")
         return retriever_multi_vector_img
 
     else:
-        print(f"Chroma database '{collection_name}' not found at: {chroma_db_path}.")
-        print("Generating...")
+        print(f"MultiVectorRetriever '{collection_name}' not found at: {retriever_save_path}.")
+        print("Generating new retriever...")
         
         # Generate image summaries
-        print("Start extracting information...")
+        print("Start extracting information from images...")
         img_base64_list, image_summaries, image_texts = extract_image_data_for_retrieval(gallery_path)
-        print("End extracting information...")
+        print("Finished extracting information.")
 
-        # The vectorstore to use to index the summaries
-        print("Start creating retriever_multi_vector...")
+        # Create the vectorstore to use for indexing
+        print("Creating vectorstore...")
+        persist_directory = os.path.join(chroma_db_dirpath, collection_name)
         vectorstore = Chroma(
             collection_name=collection_name, 
-            embedding_function=GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+            embedding_function=embeddings,
+            persist_directory=persist_directory
         )
 
         # Create retriever
+        print("Creating multi-vector retriever...")
         retriever_multi_vector_img = create_multi_vector_retriever(
             vectorstore,
             img_base64_list,
             image_summaries,
             image_texts,
         )
-        print("End creating retriever_multi_vector...")
+        print("Multi-vector retriever created successfully.")
 
-        # Save the retriever - Default to chroma_db/...
-        save_multi_vector_retriever(retriever_multi_vector_img,  chroma_db_path)
+        # Save the retriever
+        print(f"Saving retriever to {retriever_save_path}...")
+        save_multi_vector_retriever(
+            retriever_multi_vector_img,  
+            retriever_save_path,
+            vectorstore_save_method="persist"  # For Chroma, use "persist"
+        )
+        print("Retriever saved successfully.")
+        
         return retriever_multi_vector_img
 
 
